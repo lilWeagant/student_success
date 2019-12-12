@@ -35,9 +35,9 @@ df_course_probabilities = pd.read_csv(FINAL_GRADE_PROBABILITIES, low_memory = Fa
 query_id = str(student_id)
 query_sem = str(sem)
 conn = MySQLdb.connect(host='', user='', passwd='', db='')
-query = "SELECT * FROM XX WHERE XX = " + query_id + " AND XX = " + query_sem + ";"
+query = "SELECT * FROM studentdata_view WHERE id = " + query_id + " AND semester = " + query_sem + ";"
 df_student = pd.read_sql(query, conn)
-student_program = df_student["XX"]
+student_program = df_student["program"]
 student_program = student_program.iloc[0]
 
 df_cgpa = df_student[[ALL COURSE COLUMNS]] # all columns except admission GPA to compute Cumulative gpa
@@ -158,16 +158,16 @@ confidence_scores = model.predict_proba(new_df)[:,1]
 #fix indexing and append necessary columns
 new_df = new_df.reset_index()
 new_df = new_df.drop('index', axis=1)
-new_df = new_df.assign(X = confidence_scores)
-new_df = new_df.assign(XX = cgpa_sample)
-new_df = new_df.assign(XXX = grades_dict_series)
-new_df = new_df.assign(XXXX = id_series)
-new_df = new_df.assign(XXXXX = program_series)
-new_df = new_df.assign(XXXXXX = student_cgpa_series)
+new_df = new_df.assign(value = confidence_scores)
+new_df = new_df.assign(cumulative_gpa = cgpa_sample)
+new_df = new_df.assign(courses = grades_dict_series)
+new_df = new_df.assign(id = id_series)
+new_df = new_df.assign(program = program_series)
+new_df = new_df.assign(student_cgpa = student_cgpa_series)
 
 #select relevant columns
 #plot_df = new_df[['value','cumulative_gpa','courses', 'id', 'program']]
-plot_df = new_df[['X','XX','XXX', 'XXXX', 'XXXXX', 'XXXXXX']]
+plot_df = new_df[['value','cumulative_gpa','courses', 'id', 'program', 'student_cgpa']]
 
 #write to csv
 plot_df.to_csv(CSV_PATH)
