@@ -1,47 +1,19 @@
+# Created by: Riley Weagant
+# Date: May 2019
+# Desc: Uses student grade history to sample likely grades to be assigned to a pre-defined set of current/future courses
+
 #import dependencies
-import MySQLdb
 import pandas as pd
 import numpy as np
-from sklearn.externals import joblib
-from sklearn.ensemble import RandomForestClassifier
-import ast
 from scipy.stats import truncnorm
-import cgi, cgitb
-import json
 
-cgitb.enable()
-#get form output from browser
-form = cgi.FieldStorage()
+# Define Variables
+# df_cgpa: grade records in each course for queried student (Pandas Data Frame from MySQL database)
+# df_student: grade records in each course and admission gpa for queried student (Pandas Data Frame from MySQL database)
+# student_program: program name for queried student (String)
+# df_scenario_probabilities: probability of each grade scenario for the given scenario gpa (Pandas Data Frame from CSV)
+# df_course_probabilities: probability of receiving each grade in each course (Pandas Data Frame from CSV)
 
-student_id = form.getvalue('id')
-sem = form.getvalue('semester')
-course_array = form.getvalue('course_list[]')
-
-student_id = int(student_id)
-sem = int(sem)
-
-#define function to interface with truncnorm
-#Source: https://stackoverflow.com/questions/36894191/how-to-get-a-normal-distribution-within-a-range-in-numpy
-def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
-    return truncnorm(
-        (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
-
-#SCENARIO_INPUT -> local path for the .csv file of the scenario probabilities table
-#FINAL_GRADE_PROBABILITIES -> local path for the .csv file of the final grade probabilities table
-
-df_scenario_probabilities = pd.read_csv(SCENARIO_INPUT, low_memory = False)
-df_course_probabilities = pd.read_csv(FINAL_GRADE_PROBABILITIES, low_memory = False)
-
-query_id = str(student_id)
-query_sem = str(sem)
-conn = MySQLdb.connect(host='', user='', passwd='', db='')
-query = "SELECT * FROM studentdata_view WHERE id = " + query_id + " AND semester = " + query_sem + ";"
-df_student = pd.read_sql(query, conn)
-student_program = df_student["program"]
-student_program = student_program.iloc[0]
-
-df_cgpa = df_student[[ALL COURSE COLUMNS]] # all columns except admission GPA to compute Cumulative gpa
-df_student = df_student[[ALL COURSE COLUMNS AND ADMISSION GPA]] # all course columns and admission GPA for student vector
 
 #calculate the student's Cumulative GPA -- Used as mu for sampling distribution
 tmpArr = []
@@ -62,7 +34,7 @@ df_dist_params = pd.read_csv(INPUT_DIST_PARAMS, low_memory = False)
 
 std = float(df_dist_params['std'])
 
-#set up sampling distribution using previously calculated std, and mu_student
+#set up sampling distribution (truncated normal distribution) using previously calculated std, and mu_student
 dist = get_truncated_normal(mean = mu_student, sd=std, low=0, upp=4.3)
 
 #sample 400 cumulative gpa's from distribution
@@ -137,7 +109,7 @@ new_df = new_df.append([df_student]*len(assigned_grades)).reset_index() #replica
 new_df.update(assigned_grades)
 new_df = new_df.drop(columns="index")
 
-#append student ID to display on webpage
+#append student ID to display in browser
 id_array = []
 program_array = []
 student_cgpa_array = []
@@ -149,7 +121,8 @@ for x in range(len(assigned_grades)):
 id_series = pd.Series(id_array)
 program_series = pd.Series(program_array)
 student_cgpa_series = pd.Series(student_cgpa_array)
-#load predictive model
+
+# load trained predictive model
 model = joblib.load(MODEL_PATH)
 
 #predict using updated records and store confidence scores
@@ -165,14 +138,8 @@ new_df = new_df.assign(id = id_series)
 new_df = new_df.assign(program = program_series)
 new_df = new_df.assign(student_cgpa = student_cgpa_series)
 
-#select relevant columns
-#plot_df = new_df[['value','cumulative_gpa','courses', 'id', 'program']]
+#select columns to send to browser
 plot_df = new_df[['value','cumulative_gpa','courses', 'id', 'program', 'student_cgpa']]
 
 #write to csv
 plot_df.to_csv(CSV_PATH)
-
-print 'Content-type: text/html\n\n'
-print '<html><body>\n'
-print '<meta http-equiv=\"refresh\" content=\"0; url = http://localhost:8000/beeswarm.html" />'
-print '</body></html>'
