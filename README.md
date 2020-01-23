@@ -1,4 +1,4 @@
-# Student Success Project - Code Segments
+# Student Success Project
 
 This repository includes code segments from my work with the Ontario Tech University student dataset. This work was conducted as part of my Master's thesis and includes elements of data science, information visualization, and user experience research and design.
 
@@ -52,3 +52,4 @@ for x in range(len(df_student_grades)):
 
   dist_params = {'mu': [mu], 'std': [std]}
   dist_params = pd.DataFrame.from_dict(dist_params)
+```
