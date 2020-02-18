@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<link rel="stylesheet" href="./style/style.css">
+</head>
+<body>
+<svg width="1000" height="200" class="header_svg"></svg>
+<img src="./images/vialab_logo_2019_rgb.png" alt="VialabLogo" style="width:200px; height:75px" id= "vialab_logo">
+<a id="downloadAnchorElem" style="display:none"></a>
+<div id = "main">
+
+	<form action="cgi-bin/generate_beeswarm_data.py" method="POST" class="form_input" id = "load_form">
+	
+		<label for="id">Student ID (6 digits):</label>
+		<input type="text" id = "id" name="id" required minlength = "6" maxlength="6" size = "25">
+		
+		<label for="semester">Current semester number:</label>
+		<input type="text" id = "semester" name="semester" required minlength = "1" maxlength="2" size = "25">
+		<br>
+		
+		<div class="input_fields_wrap">
+			<div>
+				<label for="courses">Courses (up to 7):</label>
+				<input type="text" list="course_search" id="courses" name="course_list[]" size = "25"> <button type="button" class="add_field">Add Course</button>
+				<datalist id="course_search"></datalist>
+			</div>
+		</div>
+		
+		<input class = "submit" type="submit" value="Submit">
+	
+	</form> 
+
+<svg width="960" height="300" class="beeswarm_svg"></svg>
+<div id="bar_area"></div>
+</div>
+<div id = "loader" align = "center" style = "visibility: hidden;"></div>
+</body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/beeswarm.js"></script>
+

@@ -16,40 +16,37 @@ Pending...
 
 This script uses a normal distribution and random sampling to select and assign probable grades to selected courses. This process involved a few steps which I have described with some modified python code below. I used pandas for storage and manipulation, and numpy for math and statistics.
 
-1. Set up a normal distribution across all cumulative GPAs in the dataset. First I load the student grade data into a pandas dataframe directly from a MySQL database.
-```Python
-conn = MySQLdb.connect(host='', user='', passwd='', db='')
-query = "SELECT * FROM studentdata_semester_view;"
-df_student_grades = pd.read_sql(query, conn)
-```
+1. Set up a normal distribution across all cumulative GPAs in the dataset. The data was imported from a MySQL database and stored in a pandas dataframe. The overall cumulative GPA for each student in the dataset is stored in an array called *cgpa_array*.
 
-  Each row in the dataframe are the grade records for one student. We iterate over each row and select the valid grade/GPA values. Since -4.3 is a valid grade value (F) and 4.3 is the maximum value, we need to select values between -4.3 and 4.3 excluding 0. -4.3 will mess up the mean calculation and is replaced with 0 in the grade array.
+  The following code uses *cgpa_array* to calculate the mean and standard deviation of the distribution of cumulative GPAs.
 
   ```Python
-#pull all grade scenarios for each student
-#cumulative semester GPAs
-grade_array = []
-for x in range(len(df_student_grades)):
-    student = df_student_grades.iloc[x] #select a single row (student) from data
-    for y in range(len(student)):
-        if student[y] != 0 and student[y] <= 4.3:
-            if s[y] == -4.3: #Check if value is equal to -4.3 and replace with 0
-                grade_array.append(0)
-            else:
-                grade_array.append(student[y])
-```
-  The following function makes it easier to use SciPy truncnorm (full credit: shorturl.at/abipK). I use this function to get my final sampling distribution.
-
-  ```Python
-  def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
+  def get_truncated_normal(mean=0, sd=1, low=0, upp=10): #not my function
       return truncnorm(
           (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
 ```
   ```Python
-  mu, std = norm.fit(cgpa_arr) #fit normal curve to array of student_stds (std_arr)
+  mu, std = norm.fit(cgpa_array) #fit normal curve to array of student_stds (std_arr)
   dist = get_truncated_normal(mean = mu, sd = std, low = 0, upp = 4.3)
   X = dist.rvs(10000)
 
   dist_params = {'mu': [mu], 'std': [std]}
   dist_params = pd.DataFrame.from_dict(dist_params)
 ```
+
+2. Calculate the cumulative GPA of the student.
+
+3. Set up a normal distribution using the standard deviation from *Step 1*, and the mean from *Step 2*. This is the *sampling distribution*
+
+4. Sample a cumulative GPA from the *sampling distribution*.
+
+5. Select a grade scenario from the grade scenario probability table using the sampled GPA. The following code uses a numpy package to perform weighted random sampling. Each grade scenario in list *elements* has a probability of being selected, *scenario_probs*.
+
+  ```Python
+  rnd = np.random.choice(elements ,p=list(scenario_probs))
+  ```
+
+6. Assign each of the grades in the selected scenario to one of the selected courses using weighted random assignment. `np.random.choice()` can only be used if the sum of the probability array is 1. Since
+
+
+7. Repeat *Steps 4 - 6* for the desired number of samples.
